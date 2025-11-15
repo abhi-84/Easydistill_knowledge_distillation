@@ -1,13 +1,12 @@
 This project was implemented to validate the Easydistill framework for Knowledge Distillation.
-Here, recipe DistilQuen2.5 is used, in which model Qwen2.5-7B is used as the Teacher model and 
+Here, in Easydistill_project/easydistill/recipes/distilqwen_series, DistilQwen2.5 is used, in which model Qwen2.5-7B is used as the Teacher model and 
 Qwen2.5-0.5B is used as the student model. 
 
 During Black Box testing (Stage 1), the student model is trained with the distillqwen-100k dataset. This dataset is available 
-on HuggingFace Hub. This dataset consists of the output results of the Teacher model for any given input.
-Due to this, for Stage 1, the Teacher model is not required, and the dataset alone can do. Once training is completed,
-student model is saved.
+on HuggingFace Hub. This dataset consists of the Teacher model output for a given input.
+Due to this, for Stage 1, the Teacher model is not required, and the dataset alone can do. Once training is completed, student model is saved.
 
-During White Box testing(Stage 2), the student model (now, student model is the result saved from stage 1), 
+During White Box testing(Stage 2), the student model (now, the student model is the result saved from stage 1), 
 is trained using a logit file generated from the Teacher model. This logit file helps the student model to understand the reasonings
 done by the Teacher model to come to an output conclusion for given inputs, also called Chain of Thoughts (COT)
 Here, the teacher model needs to be loaded locally alongside the student as API don't expose logits
