@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EasyDistill Training Interface</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #f4f6fb;
+      padding: 25px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    .top-controls {
+      background: #ffffff;
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .top-controls label {
+      font-weight: 600;
+      margin-right: 10px;
+    }
+
+    .button-group button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 8px;
+      background: #4a90e2;
+      color: #fff;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .button-group button:hover {
+      background: #357abd;
+    }
+
+    .button-group button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .log-section {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .log-output {
+      background: #1e1e1e;
+      color: #eaeaea;
+      padding: 12px;
+      border-radius: 8px;
+      height: 250px;
+      overflow-y: auto;
+      font-family: monospace;
+      white-space: pre-wrap;
+      margin-top: 10px;
+    }
+
+    .below-log {
+      margin-top: 20px;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .below-log label {
+      font-weight: 600;
+    }
+
+    .loading-spinner {
+      display: none;
+      border: 4px solid #ccc;
+      border-top: 4px solid #4a90e2;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .conversation-area {
+      margin-top: 25px;
+      padding: 20px;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: none;
+    }
+
+    .chat-input-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .chat-input-group input {
+      flex-grow: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .chat-input-group button {
+      padding: 8px 14px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .chat-input-group button:hover {
+      background-color: #43a047;
+    }
+
+    .chat-output {
+      margin-top: 10px;
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 8px;
+      min-height: 100px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>EasyDistill Stage 1 Training</h1>
+
+  <!-- ===== Top Controls: Dataset + Start/Stop Training ===== -->
+  <div class="top-controls">
+    <div>
+      <label for="dataset">Upload Dataset:</label>
+      <input type="file" id="dataset" name="dataset_file">
+    </div>
+    <div class="button-group">
+      <button id="start_button">Start Training</button>
+      <button id="stop_button" disabled>Stop Training</button>
+    </div>
+    <div id="loading-spinner" class="loading-spinner"></div>
+  </div>
+
+  <!-- ===== Training Output Section ===== -->
+  <div class="log-section">
+    <h2>Training Output</h2>
+    <pre id="output-log" class="log-output"></pre>
+  </div>
+
+  <!-- ===== Below Training Output: Upload Checkpoints + Conversation Opener ===== -->
+  <div class="below-log">
+    <form id="uploadForm" method="POST" enctype="multipart/form-data" action="/upload_file">
+      <label for="fileInput">Upload Checkpoints:</label>
+      <input type="file" id="fileInput" name="file" webkitdirectory>
+    </form>
+
+    <div class="button-group" style="margin-top: 10px;">
+      <button id="converse_button" disabled>Conversation Opener</button>
+    </div>
+  </div>
+
+  <!-- ===== Conversation Section ===== -->
+  <div id="conversation_section" class="conversation-area">
+    <h2>Ask the Model a Question</h2>
+    <div class="chat-input-group">
+      <input type="text" id="chat_input" placeholder="Type your question...">
+      <button id="send_button">Send</button>
+    </div>
+    <div id="chat_output" class="chat-output"></div>
+  </div>
+
+  <!-- ===== Script Section ===== -->
+  <script>
+    const startButton = document.getElementById('start_button');
+    const stopButton = document.getElementById('stop_button');
+    const converseButton = document.getElementById('converse_button');
+    const spinner = document.getElementById('loading-spinner');
+    const outputLog = document.getElementById('output-log');
+    const chatInput = document.getElementById('chat_input');
+    const sendButton = document.getElementById('send_button');
+    const chatOutput = document.getElementById('chat_output');
+    const conversationSection = document.getElementById('conversation_section');
+    let trainingEventSource = null;
+
+    function updateButtonState(state) {
+      if (state === 'idle') {
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        converseButton.disabled = false;
+        spinner.style.display = 'none';
+      } else if (state === 'training') {
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        converseButton.disabled = true;
+        spinner.style.display = 'block';
+      } else if (state === 'complete') {
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        converseButton.disabled = false;
+        spinner.style.display = 'none';
+      } else if (state === 'loading_model') {
+        startButton.disabled = true;
+        stopButton.disabled = true;
+        converseButton.disabled = true;
+        spinner.style.display = 'block';
+      }
+    }
+
+    // === Start Training ===
+    startButton.onclick = function() {
+      updateButtonState('training');
+      outputLog.textContent = '';
+      const datasetInput = document.getElementById('dataset');
+      if (datasetInput.files.length === 0) {
+        outputLog.textContent += "Please select a dataset file!\n";
+        updateButtonState('idle');
+        return;
+      }
+
+      const datasetFilename = datasetInput.files[0].name;
+      fetch('/stage1/start_training', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataset: datasetFilename })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'error') {
+          outputLog.textContent += `Error: ${data.message}\n`;
+          updateButtonState('idle');
+          return;
+        }
+
+        outputLog.textContent += `${data.message}\n`;
+
+        trainingEventSource = new EventSource('/stream_training_output');
+        trainingEventSource.onmessage = function(e) {
+          const message = e.data.trim();
+          outputLog.textContent += message + '\n';
+          outputLog.scrollTop = outputLog.scrollHeight;
+          if (message.includes('--- END OF STREAM ---')) {
+            trainingEventSource.close();
+            updateButtonState('complete');
+          }
+        };
+
+        trainingEventSource.onerror = function() {
+          trainingEventSource.close();
+          outputLog.textContent += "Error: Event stream closed.\n";
+          updateButtonState('idle');
+        };
+      })
+      .catch(error => {
+        outputLog.textContent += `Error: ${error.message}\n`;
+        updateButtonState('idle');
+      });
+    };
+
+    // === Stop Training ===
+    stopButton.addEventListener('click', () => {
+      fetch('/stop_training', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          outputLog.textContent += `${data.message}\n--- END OF STREAM ---\n`;
+          if (trainingEventSource) trainingEventSource.close();
+          updateButtonState('idle');
+        })
+        .catch(error => {
+          outputLog.textContent += `Error sending stop signal: ${error.message}\n`;
+        });
+    });
+
+    // === Load Model ===
+    converseButton.addEventListener('click', () => {
+      updateButtonState('loading_model');
+      fetch('/load_model', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            conversationSection.style.display = 'block';
+            updateButtonState('complete');
+          } else {
+            outputLog.textContent += `Error: ${data.message}\n`;
+            updateButtonState('idle');
+          }
+        })
+        .catch(error => {
+          outputLog.textContent += `Failed to load model: ${error.message}\n`;
+          updateButtonState('idle');
+        });
+    });
+
+    // === Converse ===
+    sendButton.addEventListener('click', () => {
+      const question = chatInput.value.trim();
+      if (!question) return;
+
+      chatOutput.textContent = 'Thinking...\n';
+      fetch('/converse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      })
+      .then(response => response.json())
+      .then(data => {
+        chatOutput.textContent = 
+          data.status === 'success' 
+          ? `You: ${question}\nModel: ${data.response}`
+          : `Error: ${data.message}`;
+      })
+      .catch(error => {
+        chatOutput.textContent = `Error: ${error.message}`;
+      });
+
+      chatInput.value = '';
+    });
+
+    updateButtonState('idle');
+  </script>
+</body>
+</html>
+
