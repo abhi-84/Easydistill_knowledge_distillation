@@ -15,11 +15,11 @@ Here, the teacher model needs to be loaded locally alongside the student as API 
 Model Training resource requirements: To train the student model, it requires High CPU/GPU, RAM and disk space. I have used Google Colab Pro V100 GPU; 40GB RAM and 120GB+ disk space
 
 The process:
-    1. Training batch is fed to both models simultaneously 
-    2. Teacher produces logits (probability distributions) 
-    3. Student produces logits 
-    4. KL divergence loss computed between them 
-    5. Only student weights updated (teacher remains frozen)
+1. Training batch is fed to both models simultaneously 
+2. Teacher produces logits (probability distributions) 
+3. Student produces logits 
+4. KL divergence loss computed between them 
+5. Only student weights updated (teacher remains frozen)
 
 Steps to implement
 
