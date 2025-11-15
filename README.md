@@ -24,8 +24,8 @@ The process:
 Steps to implement
 
 1. git clone https://github.com/modelscope/easydistill
-2. 2.cd easyDistill
-3. 3. pip3 install -e .
+2. cd easyDistill
+3. pip3 install -e .
 4. Download DistilQwen_100K dataset https://huggingface.co/datasets/alibaba-pai/DistilQwen_100k/tree/main/data
 5. Convert dataset from parquet format to json format par2json.py
 6. Correctly configure distilqwen2.5_stage1.json to set student model path, dataset path and result path
