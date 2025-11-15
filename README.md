@@ -12,6 +12,8 @@ is trained using a logit file generated from the Teacher model. This logit file 
 done by the Teacher model to come to an output conclusion for given inputs, also called Chain of Thoughts (COT)
 Here, the teacher model needs to be loaded locally alongside the student as API don't expose logits
 
+Model Training resource requirements: To train the student model, it requires High CPU/GPU, RAM and disk space. I have used Google Colab Pro V100 GPU; 40GB RAM and 120GB+ disk space
+
 The process:
     1. Training batch is fed to both models simultaneously 
     2. Teacher produces logits (probability distributions) 
