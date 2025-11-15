@@ -31,20 +31,30 @@ Steps to implement
 6. Correctly configure distilqwen2.5_stage1.json to set student model path, dataset path and result path
 7. pip3 install jsonlines
 8. Train the student model using Black-box KD
-   python easydistill/kd/train.py --config ./recipes/distilqwen_series/distillqwen2.5/distilqwen2.5_stage1.json
+
+   python3 easydistill/kd/train.py --config ./recipes/distilqwen_series/distillqwen2.5/distilqwen2.5_stage1.json
+   
 10. Save model state as checkpoints to be used
 11. Test the saved model checkpoint using file test_model_interactive.py
 12. Download the 7B teacher model from the Hugging Face Hub
 13. Split the dataset-100k into multiple chunks of 20K each to save memory space, split_dataset.py
 14. Create 5 config files for each database chunk split_json.py
-15. Use config file for each chunk and fo inference to generate logits for each chunk
+15. Use a config file for each chunk and fo inference to generate logits for each chunk
+
     python3 /content/drive/MyDrive/easydistill/easydistill/kd/infer.py --config /content/drive/MyDrive/easydistill/recipes/distilqwen_series/distillqwen2.5/stage2_chunk_0.json
+
     python3 /content/drive/MyDrive/easydistill/easydistill/kd/infer.py --config /content/drive/MyDrive/easydistill/recipes/distilqwen_series/distillqwen2.5/stage2_chunk_1.json
+
     python3 /content/drive/MyDrive/easydistill/easydistill/kd/infer.py --config /content/drive/MyDrive/easydistill/recipes/distilqwen_series/distillqwen2.5/stage2_chunk_2.json
-    python3 /content/drive/MyDrive/easydistill/easydistill/kd/infer.py --config /content/drive/MyDrive/easydistill/recipes/distilqwen_series/distillqwen2.5/stage2_chunk_3.json
+
+    python3 /content/drive/MyDrive/easydistill/easydistill/kd/infer.py --config /content/drive/MyDrive/easydistill/recipes/distilqwen_series/distillqwen2.5/stage2_chunk_3.jso
+
     python3 /content/drive/MyDrive/easydistill/easydistill/kd/infer.py --config /content/drive/MyDrive/easydistill/recipes/distilqwen_series/distillqwen2.5/stage2_chunk_4.json
-16. Merging all logits into a single logit file merge_logit.py
-17. Perform the student model training using logit file and stage2.json config file. Update the stage2.json file with correct configuration values, logits.json path, student model and teacher model path and path for result
+    
+17. Merging all logits into a single logit file merge_logit.py
+18. Perform the student model training using logit file and the stage2.json config file. Update the stage2.json file with correct configuration values, logits.json path, student model and teacher model path and path for result
+
     python3 /content/drive/MyDrive/easydistill/easydistill/kd/train.py --config /content/drive/MyDrive/easydistill/recipes/distilqwen_series/distillqwen2.5/distilqwen2.5_stage2.json
-19. Test the trained student model using test_model_interactive.py
-20. Run Flask server, host the front-end UI and host the model
+    
+20. Test the trained student model using test_model_interactive.py
+21. Run Flask server, host the front-end UI and host the model
